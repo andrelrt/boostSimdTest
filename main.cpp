@@ -54,8 +54,8 @@ int main()
     setupMatrix( baseMatrix );
     setupMatrix( baseFactor );
 
-    printMatrix( "Matriz", baseMatrix, width, height ); 
-    printMatrix( "Fatores", baseFactor, width, 1 ); 
+    printMatrix( "Matriz", baseMatrix, width, height );
+    printMatrix( "Fatores", baseFactor, width, 1 );
 
     size_t index = 0;
     while( exec[index].transform_ )
@@ -72,8 +72,8 @@ int main()
             exec[index].transform_( matrix, factor );
         }
         timer.stop();
-        printMatrix( "Matriz", matrix, width, height ); 
-        printMatrix( "Fatores", factor, width, 1 ); 
+        printMatrix( "Matriz", matrix, width, height );
+        printMatrix( "Fatores", factor, width, 1 );
         std::cout << exec[index].name_ << " time: " << timer.format() << std::endl;
 
         ++index;

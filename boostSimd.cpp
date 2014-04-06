@@ -68,7 +68,7 @@ void setupMatrix( t_dataVector& matrix )
         matrix[ i ] = static_cast<t_dataType>( rand() );
     }
 
-    matrix.reserve( matrix.size() + 8*sizeof(t_dataType) );
+    matrix.reserve( matrix.size() + 16*sizeof(t_dataType) );
 }
 
 void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
@@ -93,9 +93,10 @@ void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
 void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
 {
     size_t width = factor.size();
-    size_t endWidth = width & ~3;
     for( size_t line = 0; line < width - 1; ++line )
     {
+        size_t endWidth =  line + ((width - line) & ~(3));
+
         for( size_t y = line + 1; y < width; ++y )
         {
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
@@ -142,12 +143,13 @@ void openMPTransform( t_dataVector& matrix, t_dataVector& factor )
 void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 {
     int width = static_cast<int>(factor.size());
-    int endWidth = width & ~3;
     for( int line = 0; line < width - 1; ++line )
     {
         #pragma omp parallel for schedule(static)
         for( int y = line + 1; y < width; ++y )
         {
+            int endWidth = line + ((width - line) & ~(3));
+
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
 
             int x = line;
