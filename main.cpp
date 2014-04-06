@@ -21,12 +21,16 @@
  */
 //-----------------------------------------------------------------------------
 #include "boostSimd.h"
+#include <iostream>
+#include <iomanip>
 #include <boost/timer/timer.hpp>
 
 int main()
 {
     size_t width = 500; // Coloque sempre números múltiplos de 4
     size_t height = width; // Testei somente com matrizes quadradas
+
+    size_t loopCount = 50;
 
     struct Executions
     {
@@ -67,14 +71,22 @@ int main()
         exec[index].transform_( matrix, factor );
 
         timer.start();
-        for(int i = 0; i < 50; ++i )
+        for(size_t i = 0; i < loopCount; ++i )
         {
             exec[index].transform_( matrix, factor );
         }
         timer.stop();
         printMatrix( "Matriz", matrix, width, height );
         printMatrix( "Fatores", factor, width, 1 );
-        std::cout << exec[index].name_ << " time: " << timer.format() << std::endl;
+
+        double seconds = static_cast<double>(timer.elapsed().wall) / 1000000000.0;
+        double timePerMatrix = seconds / loopCount;
+        double kflops = static_cast<double>(width*(width + 2) + 2 * width)/ 1000.0 / seconds ;
+
+        std::cout << exec[index].name_ << " time: " << timer.format( boost::timer::default_places, "%ws wall, %us user + %ss system = %ts CPU (%p%)" )
+                  << " - Time per Matrix: " << std::fixed << std::setprecision(6) << timePerMatrix << "s"
+                  << " - " << std::fixed << std::setprecision(2) << kflops << " kflops"
+                  << std::endl << std::endl;
 
         ++index;
     }
