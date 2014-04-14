@@ -25,6 +25,9 @@
 #include <iomanip>
 #include <boost/timer/timer.hpp>
 
+void setupMatrix( t_dataVector& matrix );
+void printMatrix( const std::string& name, const t_dataVector& matrix, size_t width, size_t height );
+
 int main()
 {
     size_t width = 500; // Coloque sempre números múltiplos de 4
@@ -47,6 +50,10 @@ int main()
     { "Boost.SIMD unrolled",        &unrolledSimdTransform },
     { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
     { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
+    { "Intrinsics Float",           &intrinsicsTransformFloat },
+    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
+    { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
+    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
     { "", NULL } };
 
     t_dataVector baseMatrix( width * height );
@@ -80,11 +87,11 @@ int main()
         printMatrix( "Fatores", factor, width, 1 );
 
         double seconds = static_cast<double>(timer.elapsed().wall) / 1000000000.0;
-        double timePerMatrix = seconds / loopCount;
+        double matrixPerSecond = loopCount / seconds;
         double kflops = static_cast<double>(width*(width + 2) + 2 * width)/ 1000.0 / seconds ;
 
         std::cout << exec[index].name_ << " time: " << timer.format( boost::timer::default_places, "%ws wall, %us user + %ss system = %ts CPU (%p%)" )
-                  << " - Time per Matrix: " << std::fixed << std::setprecision(6) << timePerMatrix << "s"
+                  << " - " << std::fixed << std::setprecision(6) << matrixPerSecond << " matrix/s"
                   << " - " << std::fixed << std::setprecision(2) << kflops << " kflops"
                   << std::endl << std::endl;
 
@@ -92,3 +99,27 @@ int main()
     }
     return 0;
 }
+
+void setupMatrix( t_dataVector& matrix )
+{
+    std::generate( matrix.begin( ), matrix.end( ), &rand );
+
+    matrix.reserve( matrix.size( ) + 16 * sizeof( t_dataType ) );
+}
+
+void printMatrix( const std::string& name, const t_dataVector& matrix, size_t width, size_t height )
+{
+    //	std::cout << name << std::endl << "--------------------------------------------------------------" << std::endl;
+    //	std::cout << std::fixed << std::setprecision(2) << std::right;
+    //	for( size_t y = 0; y < height; ++y )
+    //	{
+    //	    for( size_t x = 0; x < width; ++x )
+    //	    {
+    //	        std::cout.width(13);
+    //	        std::cout << matrix[ getIndex(x,y,width) ];
+    //	    }
+    //	    std::cout << std::endl;
+    //	}
+    //	std::cout << "--------------------------------------------------------------" << std::endl;
+}
+
