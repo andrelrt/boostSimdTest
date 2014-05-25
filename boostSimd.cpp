@@ -294,6 +294,7 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 	}
 }
 
+#ifdef BUILD_INTRINSICS_TRANSFORMS
 void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor )
 {
 	size_t width = factor.size();
@@ -449,4 +450,5 @@ void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector&
 		}
 	}
 }
+#endif // BUILD_INTRINSICS_TRANSFORMS
 

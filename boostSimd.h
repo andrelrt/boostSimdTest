@@ -26,6 +26,7 @@
 #include <vector>
 #include <boost/simd/memory/allocator.hpp>
 
+#define BUILD_INTRINSICS_TRANSFORMS 1
 typedef float t_dataType;
 typedef std::vector<t_dataType, boost::simd::allocator<t_dataType> > t_dataVector;
 
@@ -39,9 +40,11 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
 
+#ifdef BUILD_INTRINSICS_TRANSFORMS
 void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 void unrolledIntrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 void intrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor );
+#endif // BUILD_INTRINSICS_TRANSFORMS
 
 #endif // __BOOST_SIMD_TEST__

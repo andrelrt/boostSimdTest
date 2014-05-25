@@ -30,10 +30,16 @@ void printMatrix( const std::string& name, const t_dataVector& matrix, size_t wi
 
 int main()
 {
-    size_t width = 500; // Coloque sempre números múltiplos de 4
+    // Desabilita denormals.
+    // Requires #include <xmmintrin.h>
+    // Requires #include <pmmintrin.h>
+    _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
+    _MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
+
+    size_t width = 512; // Coloque sempre números múltiplos de 16
     size_t height = width; // Testei somente com matrizes quadradas
 
-    size_t loopCount = 50;
+    size_t loopCount = 200;
 
     struct Executions
     {
@@ -50,10 +56,12 @@ int main()
     { "Boost.SIMD unrolled",        &unrolledSimdTransform },
     { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
     { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
+#ifdef BUILD_INTRINSICS_TRANSFORMS
     { "Intrinsics Float",           &intrinsicsTransformFloat },
     { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
     { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
     { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
+#endif // BUILD_INTRINSICS_TRANSFORMS
     { "", NULL } };
 
     t_dataVector baseMatrix( width * height );
@@ -80,6 +88,8 @@ int main()
         timer.start();
         for(size_t i = 0; i < loopCount; ++i )
         {
+            matrix = baseMatrix;
+            factor = baseFactor;
             exec[index].transform_( matrix, factor );
         }
         timer.stop();
