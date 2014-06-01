@@ -60,9 +60,13 @@ void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
 			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
+            t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
+            t_dataType* pLine = &( matrix[ getIndex( line, y, width ) ] );
 			for( size_t x = line; x < width; ++x )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ];
+				*pLine -= scale * *pBase;
+                ++pLine;
+                ++pBase;
 			}
 		}
 	}
@@ -81,17 +85,22 @@ void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
             factor[ y ] -= scale * factor[ line ];
 
 			size_t x = line;
+            t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
+            t_dataType* pLine = &( matrix[ getIndex( line, y, width ) ] );
 			while( x < endWidth )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+
+                x += 4;
 			}
 
 			while( x < width )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				++x;
 			}
 		}
 	}
@@ -108,9 +117,13 @@ void openMPTransform( t_dataVector& matrix, t_dataVector& factor )
 			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
+            t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
+            t_dataType* pLine = &( matrix[ getIndex( line, y, width ) ] );
 			for( int x = line; x < width; ++x )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ];
+				*pLine -= scale * *pBase;
+                ++pLine;
+                ++pBase;
 			}
 		}
 	}
@@ -130,17 +143,22 @@ void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
             factor[ y ] -= scale * factor[ line ];
 
 			int x = line;
+            t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
+            t_dataType* pLine = &( matrix[ getIndex( line, y, width ) ] );
 			while( x < endWidth )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+
+                x += 4;
 			}
 
 			while( x < width )
 			{
-				matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ]; ++x;
+				*pLine -= scale * *pBase; ++pLine; ++pBase;
+				++x;
 			}
 		}
 	}
