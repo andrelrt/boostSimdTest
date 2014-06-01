@@ -157,17 +157,17 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 		for( size_t y = line + 1; y < width; ++y )
 		{
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            t_pack packScale( -scale );
             factor[ y ] -= scale * factor[ line ];
 
 			size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
 
-			for( size_t x = normLine; x < width; x += t_pack::static_size )
+            t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
+            t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
+            register t_pack packScale( -scale );
+            for( size_t x = normLine; x < width; x += t_pack::static_size )
 			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] = 
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine );
+                ++packLine; ++packBase;
 			}
 		}
 	}
@@ -187,40 +187,27 @@ void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 		for( size_t y = line + 1; y < width; ++y )
 		{
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            t_pack packScale( -scale );
             factor[ y ] -= scale * factor[ line ];
 
 			size_t x = normLine;
-			while( x < endWidth )
+            t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
+            t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
+            register t_pack packScale( -scale );
+
+            while( x < endWidth )
 			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+
+                x += 4*t_pack::static_size;
 			}
 
 			while( x < width )
 			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+
                 x += t_pack::static_size;
 			}
 		}
@@ -238,20 +225,20 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
-            t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            t_pack packScale( scale );
-            factor[ y ] += scale * factor[ line ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            factor[ y ] -= scale * factor[ line ];
 
 			int normLine = line & ~(static_cast<int>(t_pack::static_size - 1));
 
-			for( int x = normLine; x < width; x += t_pack::static_size )
-			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+            t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
+            t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
+            register t_pack packScale( -scale );
+            for( size_t x = normLine; x < width; x += t_pack::static_size )
+            {
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine );
+                ++packLine; ++packBase;
             }
-		}
+        }
 	}
 }
 
@@ -269,44 +256,31 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
-            t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			t_pack packScale( scale );
-            factor[ y ] += scale * factor[ line ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            factor[ y ] -= scale * factor[ line ];
 
 			int x = normLine;
-			while( x < endWidth )
-			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
-                x += t_pack::static_size;
+            t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
+            t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
+            register t_pack packScale( -scale );
+
+            while( x < endWidth )
+            {
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+
+                x += 4 * t_pack::static_size;
             }
 
-			while( x < width )
-			{
-                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
-                    boost::simd::fma( packScale,
-                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
-                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+            while( x < width )
+            {
+                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+
                 x += t_pack::static_size;
-			}
-		}
+            }
+        }
 	}
 }
 
