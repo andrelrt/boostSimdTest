@@ -111,7 +111,7 @@ void openMPTransform( t_dataVector& matrix, t_dataVector& factor )
 	int width = static_cast<int>(factor.size());
 	for( int line = 0; line < width - 1; ++line )
 	{
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
 			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
@@ -134,7 +134,7 @@ void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 	int width = static_cast<int>(factor.size());
 	for( int line = 0; line < width - 1; ++line )
 	{
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
 			int endWidth = line + ((width - line) & ~(3));
