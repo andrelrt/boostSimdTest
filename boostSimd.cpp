@@ -151,21 +151,23 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 	typedef boost::simd::pack<t_dataType> t_pack;
 
 	size_t width = factor.size();
+    t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data() );
 	for( size_t line = 0; line < width - 1; ++line )
 	{
 		for( size_t y = line + 1; y < width; ++y )
 		{
-            t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            t_pack packScale( scale );
-            factor[ y ] += scale * factor[ line ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            t_pack packScale( -scale );
+            factor[ y ] -= scale * factor[ line ];
 
 			size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
 
 			for( size_t x = normLine; x < width; x += t_pack::static_size )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									 matrix.data(), getIndex( x, y, width ) );
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] = 
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
 			}
 		}
 	}
@@ -176,44 +178,50 @@ void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 	typedef boost::simd::pack<t_dataType> t_pack;
 
 	size_t width = factor.size();
-	for( size_t line = 0; line < width - 1; ++line )
+    t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
+    for( size_t line = 0; line < width - 1; ++line )
 	{
 		size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
 		size_t endWidth = normLine + ((width - normLine) & ~(4*t_pack::static_size - 1));
 
 		for( size_t y = line + 1; y < width; ++y )
 		{
-            t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            t_pack packScale( scale );
-            factor[ y ] += scale * factor[ line ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            t_pack packScale( -scale );
+            factor[ y ] -= scale * factor[ line ];
 
 			size_t x = normLine;
 			while( x < endWidth )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
 			}
 
 			while( x < width )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
 			}
 		}
 	}
@@ -224,9 +232,10 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 	typedef boost::simd::pack<t_dataType> t_pack;
 
 	int width = static_cast<int>(factor.size());
-	for( int line = 0; line < width - 1; ++line )
+    t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
+    for( int line = 0; line < width - 1; ++line )
 	{
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
             t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
@@ -237,10 +246,11 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 
 			for( int x = normLine; x < width; x += t_pack::static_size )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-			}
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+            }
 		}
 	}
 }
@@ -250,12 +260,13 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 	typedef boost::simd::pack<t_dataType> t_pack;
 
 	int width = static_cast<int>(factor.size());
-	for( int line = 0; line < width - 1; ++line )
+    t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
+    for( int line = 0; line < width - 1; ++line )
 	{
 		int normLine = line & ~(4*t_pack::static_size - 1);
 		int endWidth = (width - normLine) & ~(4*t_pack::static_size - 1);
 
-		#pragma omp parallel for schedule(static)
+		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
             t_dataType scale = -matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
@@ -265,30 +276,35 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 			int x = normLine;
 			while( x < endWidth )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
-			}
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
+            }
 
 			while( x < width )
 			{
-                boost::simd::store( boost::simd::fma( packScale, boost::simd::aligned_load<t_pack>( matrix.data( ), getIndex( x, line, width ) ),
-													  boost::simd::aligned_load<t_pack>( matrix.data(), getIndex( x, y, width ) ) ),
-									matrix.data(), getIndex( x, y, width ) );
-				x += t_pack::static_size;
+                packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] =
+                    boost::simd::fma( packScale,
+                                      packMatrix[ getIndex( x, line, width ) / t_pack::static_size ],
+                                      packMatrix[ getIndex( x, y, width ) / t_pack::static_size ] );
+                x += t_pack::static_size;
 			}
 		}
 	}
