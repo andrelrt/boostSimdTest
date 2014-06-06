@@ -36,7 +36,7 @@ int main()
     _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
     _MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
 
-    size_t width = 512; // Coloque sempre números múltiplos de 16
+    size_t width = 768; // Coloque sempre números múltiplos de 16
     size_t height = width; // Testei somente com matrizes quadradas
 
     size_t loopCount = 200;
@@ -49,6 +49,7 @@ int main()
 
     Executions exec[] = {
     { "Base",                       &simpleTransform },
+    { "Vector",                     &simpleVectorTransform },
     { "Unrolled",                   &unrolledTransform },
     { "OpenMP",                     &openMPTransform },
     { "OpenMP unrolled",            &unrolledOpenMPTransform },

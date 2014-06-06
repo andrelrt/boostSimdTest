@@ -52,24 +52,42 @@ inline size_t getIndex( size_t x, size_t y, size_t width )
 
 void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
 {
-	size_t width = factor.size();
-	for( size_t line = 0; line < width - 1; ++line )
-	{
-		for( size_t y = line + 1; y < width; ++y )
-		{
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+    size_t width = factor.size( );
+    for( size_t line = 0; line < width - 1; ++line )
+    {
+        for( size_t y = line + 1; y < width; ++y )
+        {
+            register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            factor[ y ] -= scale * factor[ line ];
+
+            for( size_t x = line; x < width; ++x )
+            {
+                matrix[ getIndex( x, y, width ) ] -= scale * matrix[ getIndex( x, line, width ) ];
+            }
+        }
+    }
+}
+
+void simpleVectorTransform( t_dataVector& matrix, t_dataVector& factor )
+{
+    size_t width = factor.size( );
+    for( size_t line = 0; line < width - 1; ++line )
+    {
+        for( size_t y = line + 1; y < width; ++y )
+        {
+            register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
             t_dataType* pLine = &( matrix[ getIndex( line, y, width ) ] );
-			for( size_t x = line; x < width; ++x )
-			{
-				*pLine -= scale * *pBase;
+            for( size_t x = line; x < width; ++x )
+            {
+                *pLine -= scale * *pBase;
                 ++pLine;
                 ++pBase;
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
@@ -81,7 +99,7 @@ void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
 
 		for( size_t y = line + 1; y < width; ++y )
 		{
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			size_t x = line;
@@ -114,7 +132,7 @@ void openMPTransform( t_dataVector& matrix, t_dataVector& factor )
 		#pragma omp parallel for
 		for( int y = line + 1; y < width; ++y )
 		{
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
@@ -139,7 +157,7 @@ void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 		{
 			int endWidth = line + ((width - line) & ~(3));
 
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			int x = line;
@@ -313,7 +331,7 @@ void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor )
 		for( size_t y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			__m128 xmmScale = _mm_set1_ps( scale );
+			register __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -339,7 +357,7 @@ void unrolledIntrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& facto
 		for( size_t y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			__m128 xmmScale = _mm_set1_ps( scale );
+			register __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -391,7 +409,7 @@ void intrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor 
 		for( int y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			__m128 xmmScale = _mm_set1_ps( scale );
+			register __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -418,7 +436,7 @@ void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector&
 		for( int y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			__m128 xmmScale = _mm_set1_ps( scale );
+			register __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 

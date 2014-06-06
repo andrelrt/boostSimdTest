@@ -31,6 +31,7 @@ typedef float t_dataType;
 typedef std::vector<t_dataType, boost::simd::allocator<t_dataType> > t_dataVector;
 
 void simpleTransform( t_dataVector& matrix, t_dataVector& factor );
+void simpleVectorTransform( t_dataVector& matrix, t_dataVector& factor );
 void openMPTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
