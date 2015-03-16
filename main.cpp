@@ -49,20 +49,25 @@ int main()
 
     Executions exec[] = {
     { "Base",                       &simpleTransform },
-    { "Vector",                     &simpleVectorTransform },
-    { "Unrolled",                   &unrolledTransform },
+//    { "Unrolled",                   &unrolledTransform },
     { "OpenMP",                     &openMPTransform },
-    { "OpenMP unrolled",            &unrolledOpenMPTransform },
-    { "Boost.SIMD",                 &simdTransform },
-    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
+//    { "OpenMP unrolled",            &unrolledOpenMPTransform },
+
+    { "Vectorized", &vectorizedTransform },
+    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
+
+    { "Boost.SIMD", &simdTransform },
+//    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
     { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
-    { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
+ //   { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
+
 #ifdef BUILD_INTRINSICS_TRANSFORMS
     { "Intrinsics Float",           &intrinsicsTransformFloat },
-    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
+//    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
     { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
-    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
+//    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
 #endif // BUILD_INTRINSICS_TRANSFORMS
+
     { "", NULL } };
 
     t_dataVector baseMatrix( width * height );
