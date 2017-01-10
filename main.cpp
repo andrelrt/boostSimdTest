@@ -50,21 +50,21 @@ int main()
     Executions exec[] = {
     { "Base",                       &simpleTransform },
 //    { "Unrolled",                   &unrolledTransform },
-    { "OpenMP",                     &openMPTransform },
+//    { "OpenMP",                     &openMPTransform },
 //    { "OpenMP unrolled",            &unrolledOpenMPTransform },
 
     { "Vectorized", &vectorizedTransform },
-    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
+//    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
 
     { "Boost.SIMD", &simdTransform },
 //    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
-    { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
+//    { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
  //   { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
 
 #ifdef BUILD_INTRINSICS_TRANSFORMS
     { "Intrinsics Float",           &intrinsicsTransformFloat },
 //    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
-    { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
+//    { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
 //    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
 #endif // BUILD_INTRINSICS_TRANSFORMS
 

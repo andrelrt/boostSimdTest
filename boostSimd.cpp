@@ -29,19 +29,19 @@
 
 #include <xmmintrin.h>
 
-#include <boost/simd/sdk/simd/pack.hpp>
-#include <boost/simd/include/functions/plus.hpp>
-#include <boost/simd/include/functions/multiplies.hpp>
+#include <boost/simd/pack.hpp>
+#include <boost/simd/function/plus.hpp>
+#include <boost/simd/function/multiplies.hpp>
 
-#include <boost/simd/memory/functions/load.hpp>
-#include <boost/simd/memory/functions/aligned_store.hpp>
-#include <boost/simd/memory/functions/stream.hpp>
-#include <boost/simd/memory/prefetch.hpp>
+#include <boost/simd/function/load.hpp>
+#include <boost/simd/function/aligned_store.hpp>
+#include <boost/simd/function/stream.hpp>
+//#include <boost/simd/prefetch.hpp>
 
-#include <boost/simd/arithmetic/functions/fma.hpp>
+#include <boost/simd/function/fma.hpp>
 
-#include <boost/simd/include/functions/load.hpp>
-#include <boost/simd/include/functions/store.hpp>
+#include <boost/simd/function/load.hpp>
+#include <boost/simd/function/store.hpp>
 
 #include "boostSimd.h"
 
