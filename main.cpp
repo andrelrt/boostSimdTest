@@ -57,6 +57,7 @@ int main()
 //    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
 
     { "Boost.SIMD", &simdTransform },
+    { "Boost.SIMD with transform", &simdTransform2 },
 //    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
 //    { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
  //   { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },

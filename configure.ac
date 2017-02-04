@@ -15,10 +15,10 @@ AC_PROG_LIBTOOL
 
 AC_HEADER_RESOLV
 
-AX_BOOST_BASE([1.48.0])
+AX_BOOST_BASE([1.63.0])
 AX_BOOST_TIMER
 AX_BOOST_SYSTEM
 
-CXXFLAGS=" -g -O3 -march=native -Wall -fno-strict-aliasing -fopenmp"
+CXXFLAGS=" -g -O3 -Wall -fno-strict-aliasing -std=c++14"
 
 AC_OUTPUT([Makefile])

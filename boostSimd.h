@@ -39,6 +39,7 @@ void vectorizedTransform(t_dataVector& matrix, t_dataVector& factor);
 void vectorizedOpenMPTransform(t_dataVector& matrix, t_dataVector& factor);
 
 void simdTransform( t_dataVector& matrix, t_dataVector& factor );
+void simdTransform2( t_dataVector& matrix, t_dataVector& factor );
 void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );

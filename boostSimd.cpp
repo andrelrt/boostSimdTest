@@ -42,8 +42,11 @@
 
 #include <boost/simd/function/load.hpp>
 #include <boost/simd/function/store.hpp>
+#include <boost/simd/algorithm/transform.hpp>
 
 #include "boostSimd.h"
+
+namespace bs = boost::simd;
 
 inline size_t getIndex( size_t x, size_t y, size_t width )
 {
@@ -57,7 +60,7 @@ void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
     {
         for( size_t y = line + 1; y < width; ++y )
         {
-            register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             for( size_t x = line; x < width; ++x )
@@ -75,7 +78,7 @@ void vectorizedTransform( t_dataVector& matrix, t_dataVector& factor )
     {
         for( size_t y = line + 1; y < width; ++y )
         {
-            register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
@@ -97,7 +100,7 @@ void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
 
 		for( size_t y = line + 1; y < width; ++y )
 		{
-			register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			size_t x = line;
@@ -130,7 +133,7 @@ void openMPTransform(t_dataVector& matrix, t_dataVector& factor)
 #pragma omp parallel for
         for (int y = line + 1; y < width; ++y)
         {
-            register t_dataType scale = matrix[getIndex(line, y, width)] / matrix[getIndex(line, line, width)];
+            t_dataType scale = matrix[getIndex(line, y, width)] / matrix[getIndex(line, line, width)];
             factor[y] -= scale * factor[line];
 
             for (size_t x = line; x < width; ++x)
@@ -149,7 +152,7 @@ void vectorizedOpenMPTransform(t_dataVector& matrix, t_dataVector& factor)
 #pragma omp parallel for
         for (int y = line + 1; y < width; ++y)
         {
-            register t_dataType scale = matrix[getIndex(line, y, width)] / matrix[getIndex(line, line, width)];
+            t_dataType scale = matrix[getIndex(line, y, width)] / matrix[getIndex(line, line, width)];
             factor[y] -= scale * factor[line];
 
             t_dataType* pBase = &(matrix[getIndex(line, line, width)]);
@@ -172,7 +175,7 @@ void unrolledOpenMPTransform(t_dataVector& matrix, t_dataVector& factor)
 		{
 			int endWidth = line + ((width - line) & ~(3));
 
-			register t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			int x = line;
@@ -199,7 +202,7 @@ void unrolledOpenMPTransform(t_dataVector& matrix, t_dataVector& factor)
 
 void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 {
-	typedef boost::simd::pack<t_dataType> t_pack;
+	using t_pack = bs::pack<t_dataType>;
 
 	size_t width = factor.size();
     t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data() );
@@ -214,18 +217,52 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 
             t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
             t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
-            register t_pack packScale( -scale );
+            t_pack packScale( -scale );
             for( size_t x = normLine; x < width; x += t_pack::static_size )
 			{
-                *packLine++ = boost::simd::fma( packScale, *packBase++, *packLine );
+                *packLine = bs::fma( packScale, *packBase++, *packLine );
+                packLine++;
 			}
 		}
 	}
 }
 
+struct myfma
+{
+    t_dataType scale;
+    template<typename T>
+    T operator()(T const& a, T const& b) const
+    {
+        return bs::fma( scale, b, a );
+    }
+};
+
+
+void simdTransform2( t_dataVector& matrix, t_dataVector& factor )
+{
+    using t_pack = bs::pack<t_dataType>;
+    size_t width = factor.size( );
+    for( size_t line = 0; line < width - 1; ++line )
+    {
+        for( size_t y = line + 1; y < width; ++y )
+        {
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            factor[ y ] -= scale * factor[ line ];
+
+			size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
+            t_dataType* pBase = &( matrix[ getIndex( normLine, line, width ) ] );
+            t_dataType* pLine = &( matrix[ getIndex( normLine, y, width ) ] );
+
+            myfma f;
+            f.scale = -scale;
+            bs::transform( pLine, pLine + (width - normLine), pBase, pLine, f );
+        }
+    }
+}
+
 void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 {
-	typedef boost::simd::pack<t_dataType> t_pack;
+	using t_pack = bs::pack<t_dataType>;
 
 	size_t width = factor.size();
     t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
@@ -242,21 +279,21 @@ void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 			size_t x = normLine;
             t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
             t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
-            register t_pack packScale( -scale );
+            t_pack packScale( -scale );
 
             while( x < endWidth )
 			{
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
+                *packLine = bs::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = bs::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = bs::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = bs::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
 
                 x += 4*t_pack::static_size;
 			}
 
 			while( x < width )
 			{
-                *packLine = boost::simd::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
+                *packLine = bs::fma( packScale, *packBase, *packLine ); ++packLine; ++packBase;
 
                 x += t_pack::static_size;
 			}
@@ -266,7 +303,7 @@ void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 
 void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 {
-	typedef boost::simd::pack<t_dataType> t_pack;
+	using t_pack = bs::pack<t_dataType>;
 
 	int width = static_cast<int>(factor.size());
     t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
@@ -282,10 +319,10 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 
             t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
             t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
-            register t_pack packScale( -scale );
+            t_pack packScale( -scale );
             for( size_t x = normLine; x < width; x += t_pack::static_size )
             {
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
             }
         }
 	}
@@ -293,7 +330,7 @@ void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 
 void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 {
-	typedef boost::simd::pack<t_dataType> t_pack;
+	using t_pack = bs::pack<t_dataType>;
 
 	int width = static_cast<int>(factor.size());
     t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data( ) );
@@ -311,20 +348,20 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 			int x = normLine;
             t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
             t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
-            register t_pack packScale( -scale );
+            t_pack packScale( -scale );
 
             while( x < endWidth )
             {
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
                 x += 4 * t_pack::static_size;
             }
 
             while( x < width )
             {
-                *packLine++ = boost::simd::fma(packScale, *packBase++, *packLine);
+                *packLine = bs::fma(packScale, *packBase++, *packLine); ++packLine;
 
                 x += t_pack::static_size;
             }
@@ -343,7 +380,7 @@ void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor )
 		for( size_t y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			register __m128 xmmScale = _mm_set1_ps( scale );
+			 __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -369,7 +406,7 @@ void unrolledIntrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& facto
 		for( size_t y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			register __m128 xmmScale = _mm_set1_ps( scale );
+			 __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -421,7 +458,7 @@ void intrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor 
 		for( int y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			register __m128 xmmScale = _mm_set1_ps( scale );
+			 __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
@@ -448,7 +485,7 @@ void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector&
 		for( int y = line + 1; y < width; ++y )
 		{
 			float scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-			register __m128 xmmScale = _mm_set1_ps( scale );
+			 __m128 xmmScale = _mm_set1_ps( scale );
 
 			factor[ y ] -= scale * factor[ line ];
 
