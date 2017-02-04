@@ -60,7 +60,7 @@ void simpleTransform( t_dataVector& matrix, t_dataVector& factor )
     {
         for( size_t y = line + 1; y < width; ++y )
         {
-            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             for( size_t x = line; x < width; ++x )
@@ -78,7 +78,7 @@ void vectorizedTransform( t_dataVector& matrix, t_dataVector& factor )
     {
         for( size_t y = line + 1; y < width; ++y )
         {
-            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
             t_dataType* pBase = &( matrix[ getIndex( line, line, width ) ] );
@@ -100,7 +100,7 @@ void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
 
 		for( size_t y = line + 1; y < width; ++y )
 		{
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			 t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			size_t x = line;
@@ -175,7 +175,7 @@ void unrolledOpenMPTransform(t_dataVector& matrix, t_dataVector& factor)
 		{
 			int endWidth = line + ((width - line) & ~(3));
 
-			t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+			 t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] -= scale * factor[ line ];
 
 			int x = line;
@@ -230,7 +230,7 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 struct myfma
 {
     t_dataType scale;
-    template<typename T>
+    template<typename T> 
     T operator()(T const& a, T const& b) const
     {
         return bs::fma( scale, b, a );
