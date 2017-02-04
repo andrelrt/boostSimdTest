@@ -30,14 +30,14 @@ void printMatrix( const std::string& name, const t_dataVector& matrix, size_t wi
 
 int main()
 {
-    // Desabilita denormals.
+    // Disable denormals
     // Requires #include <xmmintrin.h>
     // Requires #include <pmmintrin.h>
     _MM_SET_FLUSH_ZERO_MODE( _MM_FLUSH_ZERO_ON );
     _MM_SET_DENORMALS_ZERO_MODE( _MM_DENORMALS_ZERO_ON );
 
-    size_t width = 768; // Coloque sempre números múltiplos de 16
-    size_t height = width; // Testei somente com matrizes quadradas
+    size_t width = 768; // Always multiples of 16
+    size_t height = width; // Always a square matrix 
 
     size_t loopCount = 200;
 
@@ -48,22 +48,23 @@ int main()
     };
 
     Executions exec[] = {
-    { "Base",                       &simpleTransform },
+//    { "Base",                       &simpleTransform },
 //    { "Unrolled",                   &unrolledTransform },
 //    { "OpenMP",                     &openMPTransform },
 //    { "OpenMP unrolled",            &unrolledOpenMPTransform },
 
-    { "Vectorized", &vectorizedTransform },
+//    { "Vectorized", &vectorizedTransform },
 //    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
 
     { "Boost.SIMD", &simdTransform },
-    { "Boost.SIMD with transform", &simdTransform2 },
+    { "Boost.SIMD with ranges", &simdTransform2 },
+    { "Boost.SIMD with transform", &simdTransform3 },
 //    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
 //    { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
  //   { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
 
 #ifdef BUILD_INTRINSICS_TRANSFORMS
-    { "Intrinsics Float",           &intrinsicsTransformFloat },
+//    { "Intrinsics Float",           &intrinsicsTransformFloat },
 //    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
 //    { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
 //    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
@@ -76,12 +77,12 @@ int main()
 
     boost::timer::cpu_timer timer;
 
-    srand( time(NULL) ); // Para depurar é melhor colocar uma constante aqui, vai ser sempre a mesma matriz
+    srand( time(NULL) ); // To debug put a constant here
     setupMatrix( baseMatrix );
     setupMatrix( baseFactor );
 
-    printMatrix( "Matriz", baseMatrix, width, height );
-    printMatrix( "Fatores", baseFactor, width, 1 );
+    printMatrix( "Matrix", baseMatrix, width, height );
+    printMatrix( "Factors", baseFactor, width, 1 );
 
     size_t index = 0;
     while( exec[index].transform_ )
@@ -89,7 +90,7 @@ int main()
         t_dataVector matrix( baseMatrix );
         t_dataVector factor( baseFactor );
 
-        // Warmup (arruma o cache, carrega OpenMP, etc).
+        // Warmup (fill cache, create OpenMP threads, etc).
         exec[index].transform_( matrix, factor );
 
         timer.start();
@@ -100,14 +101,15 @@ int main()
             exec[index].transform_( matrix, factor );
         }
         timer.stop();
-        printMatrix( "Matriz", matrix, width, height );
-        printMatrix( "Fatores", factor, width, 1 );
+        printMatrix( "Matrix", matrix, width, height );
+        printMatrix( "Factors", factor, width, 1 );
 
         double seconds = static_cast<double>(timer.elapsed().wall) / 1000000000.0;
         double matrixPerSecond = loopCount / seconds;
         double kflops = static_cast<double>(width*(width + 2) + 2 * width)/ 1000.0 / seconds ;
 
-        std::cout << exec[index].name_ << " time: " << timer.format( boost::timer::default_places, "%ws wall, %us user + %ss system = %ts CPU (%p%)" )
+        std::cout << exec[index].name_ << " time: " 
+                  << timer.format( boost::timer::default_places, "%ws wall, %us user + %ss system = %ts CPU (%p%)" )
                   << " - " << std::fixed << std::setprecision(6) << matrixPerSecond << " matrix/s"
                   << " - " << std::fixed << std::setprecision(2) << kflops << " kflops"
                   << std::endl << std::endl;

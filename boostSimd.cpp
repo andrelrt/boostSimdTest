@@ -44,6 +44,9 @@
 #include <boost/simd/function/store.hpp>
 #include <boost/simd/algorithm/transform.hpp>
 
+#include <boost/simd/range/aligned_input_range.hpp>
+#include <boost/simd/range/aligned_output_range.hpp>
+
 #include "boostSimd.h"
 
 namespace bs = boost::simd;
@@ -208,12 +211,11 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
     t_pack* packMatrix = reinterpret_cast<t_pack*>( matrix.data() );
 	for( size_t line = 0; line < width - 1; ++line )
 	{
+        size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
 		for( size_t y = line + 1; y < width; ++y )
 		{
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            factor[ y ] -= scale * factor[ line ];
-
-			size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
+            factor[ y ] = bs::fma( -scale, factor[ line ], factor[ y ] );
 
             t_pack* packLine = &( packMatrix[ getIndex( normLine, y, width ) / t_pack::static_size ] );
             t_pack* packBase = &( packMatrix[ getIndex( normLine, line, width ) / t_pack::static_size ] );
@@ -237,8 +239,41 @@ struct myfma
     }
 };
 
-
 void simdTransform2( t_dataVector& matrix, t_dataVector& factor )
+{
+	using t_pack = bs::pack<t_dataType>;
+
+	size_t width = factor.size();
+	for( size_t line = 0; line < width - 1; ++line )
+	{
+        size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
+        t_dataType* pBase = &( matrix[ getIndex( normLine, line, width ) ] );
+        auto baseRange = bs::aligned_input_range( pBase, pBase + (width - normLine ) );
+	    auto baseBegin = std::begin( baseRange );	
+        auto baseEnd = std::end( baseRange );
+        for( size_t y = line + 1; y < width; ++y )
+		{
+            t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
+            factor[ y ] = bs::fma( -scale, factor[ line ], factor[ y ] );
+
+            t_dataType* pLine = &( matrix[ getIndex( normLine, y, width ) ] );
+
+            auto lineRange = bs::aligned_input_range( pLine, pLine + (width - normLine ) );
+            auto lineOut = bs::aligned_output_range( pLine, pLine + (width - normLine ) );
+            t_pack packScale( -scale );
+            auto lineIt = std::begin( lineRange );
+            auto outIt = std::begin( lineOut );
+            for( auto it = baseBegin; it != baseEnd; ++it )
+            {
+                *outIt = bs::fma( packScale, *it, *lineIt );
+                ++lineIt;
+                ++outIt;
+            }
+		}
+	}
+}
+
+void simdTransform3( t_dataVector& matrix, t_dataVector& factor )
 {
     using t_pack = bs::pack<t_dataType>;
     size_t width = factor.size( );
@@ -247,7 +282,7 @@ void simdTransform2( t_dataVector& matrix, t_dataVector& factor )
         for( size_t y = line + 1; y < width; ++y )
         {
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
-            factor[ y ] -= scale * factor[ line ];
+            factor[ y ] = bs::fma( -scale, factor[ line ], factor[ y ] );
 
 			size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
             t_dataType* pBase = &( matrix[ getIndex( normLine, line, width ) ] );
