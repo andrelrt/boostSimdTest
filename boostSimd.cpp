@@ -248,26 +248,19 @@ void simdTransform2( t_dataVector& matrix, t_dataVector& factor )
 	{
         size_t normLine = line & ~(static_cast<size_t>(t_pack::static_size - 1));
         t_dataType* pBase = &( matrix[ getIndex( normLine, line, width ) ] );
-        auto baseRange = bs::aligned_input_range( pBase, pBase + (width - normLine ) );
-	    auto baseBegin = std::begin( baseRange );	
-        auto baseEnd = std::end( baseRange );
+        auto baseRange = bs::aligned_input_range( pBase, pBase + (width - normLine) );
         for( size_t y = line + 1; y < width; ++y )
 		{
             t_dataType scale = matrix[ getIndex( line, y, width ) ] / matrix[ getIndex( line, line, width ) ];
             factor[ y ] = bs::fma( -scale, factor[ line ], factor[ y ] );
 
             t_dataType* pLine = &( matrix[ getIndex( normLine, y, width ) ] );
-
-            auto lineRange = bs::aligned_input_range( pLine, pLine + (width - normLine ) );
-            auto lineOut = bs::aligned_output_range( pLine, pLine + (width - normLine ) );
+            auto lineIt = std::begin( bs::aligned_input_range( pLine, pLine + (width - normLine) ) );
+            auto outIt = std::begin( bs::aligned_output_range( pLine, pLine + (width - normLine) ) );
             t_pack packScale( -scale );
-            auto lineIt = std::begin( lineRange );
-            auto outIt = std::begin( lineOut );
-            for( auto it = baseBegin; it != baseEnd; ++it )
+            for( auto&& val : baseRange ) 
             {
-                *outIt = bs::fma( packScale, *it, *lineIt );
-                ++lineIt;
-                ++outIt;
+                *outIt = bs::fma( packScale, val, *lineIt ); ++lineIt; ++outIt;
             }
 		}
 	}
