@@ -8,8 +8,7 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# FIXME Hardcodded paths
-set(BOOST_SIMD_INCLUDE_DIR /usr/local/opt/boost.simd/include)
+find_package(BoostSimd)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -march=native -mtune=native -Wall -fno-strict-aliasing")
 
