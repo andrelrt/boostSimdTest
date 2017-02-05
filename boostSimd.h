@@ -28,28 +28,31 @@
 
 #define BUILD_INTRINSICS_TRANSFORMS 1
 using t_dataType = float;
-using t_dataVector = std::vector<t_dataType, boost::simd::allocator<t_dataType> >;
+using t_dataVector = std::vector<t_dataType, boost::simd::allocator<t_dataType>>;
 
 void simpleTransform( t_dataVector& matrix, t_dataVector& factor );
-void openMPTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledTransform( t_dataVector& matrix, t_dataVector& factor );
-void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
-
 void vectorizedTransform(t_dataVector& matrix, t_dataVector& factor);
-void vectorizedOpenMPTransform(t_dataVector& matrix, t_dataVector& factor);
-
 void simdTransform( t_dataVector& matrix, t_dataVector& factor );
 void simdTransform2( t_dataVector& matrix, t_dataVector& factor );
 void simdTransform3( t_dataVector& matrix, t_dataVector& factor );
-void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
 void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor );
-void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
 
 #ifdef BUILD_INTRINSICS_TRANSFORMS
 void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 void unrolledIntrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor );
+#endif // BUILD_INTRINSICS_TRANSFORMS
+
+#ifdef _OPENMP
+void openMPTransform( t_dataVector& matrix, t_dataVector& factor );
+void unrolledOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
+void vectorizedOpenMPTransform(t_dataVector& matrix, t_dataVector& factor);
+void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
+void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor );
+#ifdef BUILD_INTRINSICS_TRANSFORMS
 void intrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor );
 #endif // BUILD_INTRINSICS_TRANSFORMS
+#endif // _OPENMP
 
 #endif // __BOOST_SIMD_TEST__

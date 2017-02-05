@@ -128,6 +128,7 @@ void unrolledTransform( t_dataVector& matrix, t_dataVector& factor )
 	}
 }
 
+#ifdef _OPENMP
 void openMPTransform(t_dataVector& matrix, t_dataVector& factor)
 {
     int width = static_cast<int>(factor.size());
@@ -202,6 +203,7 @@ void unrolledOpenMPTransform(t_dataVector& matrix, t_dataVector& factor)
 		}
 	}
 }
+#endif // _OPENMP
 
 void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 {
@@ -329,6 +331,7 @@ void unrolledSimdTransform( t_dataVector& matrix, t_dataVector& factor )
 	}
 }
 
+#ifdef _OPENMP
 void simdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
 {
 	using t_pack = bs::pack<t_dataType>;
@@ -396,6 +399,7 @@ void unrolledSimdOpenMPTransform( t_dataVector& matrix, t_dataVector& factor )
         }
 	}
 }
+#endif // _OPENMP
 
 #ifdef BUILD_INTRINSICS_TRANSFORMS
 void intrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& factor )
@@ -475,6 +479,7 @@ void unrolledIntrinsicsTransformFloat( t_dataVector& matrix, t_dataVector& facto
 	}
 }
 
+#ifdef _OPENMP
 void intrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector& factor )
 {
 	int width = static_cast<int>( factor.size() );
@@ -553,5 +558,6 @@ void unrolledIntrinsicsOpenMPTransformFloat( t_dataVector& matrix, t_dataVector&
 		}
 	}
 }
+#endif // _OPENMP
 #endif // BUILD_INTRINSICS_TRANSFORMS
 

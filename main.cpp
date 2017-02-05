@@ -50,8 +50,10 @@ int main()
     Executions exec[] = {
 //    { "Base",                       &simpleTransform },
 //    { "Unrolled",                   &unrolledTransform },
+#ifdef _OPENMP
 //    { "OpenMP",                     &openMPTransform },
 //    { "OpenMP unrolled",            &unrolledOpenMPTransform },
+#endif // _OPENMP
 
 //    { "Vectorized", &vectorizedTransform },
 //    { "Vectorized OpenMP", &vectorizedOpenMPTransform },
@@ -60,14 +62,18 @@ int main()
     { "Boost.SIMD with ranges", &simdTransform2 },
     { "Boost.SIMD with transform", &simdTransform3 },
 //    { "Boost.SIMD unrolled",        &unrolledSimdTransform },
+#ifdef _OPENMP
 //    { "Boost.SIMD OpenMP",          &simdOpenMPTransform },
  //   { "Boost.SIMD OpenMP unrolled", &unrolledSimdOpenMPTransform },
+#endif // _OPENMP
 
 #ifdef BUILD_INTRINSICS_TRANSFORMS
 //    { "Intrinsics Float",           &intrinsicsTransformFloat },
 //    { "Intrinsics Float unrolled",  &unrolledIntrinsicsTransformFloat },
+#ifdef _OPENMP
 //    { "Intrinsics Float OpenMP",    &intrinsicsOpenMPTransformFloat },
 //    { "Intrinsics Float OpenMP unrolled", &unrolledIntrinsicsOpenMPTransformFloat },
+#endif // _OPENMP
 #endif // BUILD_INTRINSICS_TRANSFORMS
 
     { "", NULL } };
