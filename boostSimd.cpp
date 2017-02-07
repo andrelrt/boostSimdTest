@@ -231,16 +231,6 @@ void simdTransform( t_dataVector& matrix, t_dataVector& factor )
 	}
 }
 
-struct myfma
-{
-    t_dataType scale;
-    template<typename T> 
-    T operator()(T const& a, T const& b) const
-    {
-        return bs::fma( scale, b, a );
-    }
-};
-
 void simdTransform2( t_dataVector& matrix, t_dataVector& factor )
 {
 	using t_pack = bs::pack<t_dataType>;
@@ -283,9 +273,11 @@ void simdTransform3( t_dataVector& matrix, t_dataVector& factor )
             t_dataType* pBase = &( matrix[ getIndex( normLine, line, width ) ] );
             t_dataType* pLine = &( matrix[ getIndex( normLine, y, width ) ] );
 
-            myfma f;
-            f.scale = -scale;
-            bs::transform( pLine, pLine + (width - normLine), pBase, pLine, f );
+            bs::transform( pLine, pLine + (width - normLine), pBase, pLine,
+            [&scale]( auto&& lhs, auto&& rhs )
+            {
+                return bs::fma( -scale, rhs, lhs );
+            });
         }
     }
 }
